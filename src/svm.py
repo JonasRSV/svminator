@@ -13,25 +13,24 @@ def sign(n):
         return -1
 
 
-def random_clusters(dim):
+def random_clusters(group_spread, cluster_separation, number_of_points, dims):
     """Generate two clusters in dim dimensional space."""
-    global LABELS
-    global CLUSTER_SEP
-    global SIZE
-    global GROUP_SPREAD
+    labels = np.array([sign(rn.randrange(-10, 10))
+                      for _ in range(number_of_points)])
 
-    LABELS = np.array([sign(rn.randrange(-10, 10)) for _ in range(SIZE)])
-    separator = np.array([CLUSTER_SEP for _ in range(dim)])
+    separator = np.array([cluster_separation for _ in range(dims)])
 
-    matrix_dim = (SIZE, dim)
+    matrix_dim = (number_of_points, dims)
     matrix = np.zeros(matrix_dim)
 
-    for i in range(SIZE):
-        point = np.array([GROUP_SPREAD * (rn.random()-0.5) for _ in range(dim)])
-        matrix[i] = point + LABELS[i] * separator
+    for i in range(number_of_points):
+        point = np.array([group_spread * (rn.random() - 0.5)
+                         for _ in range(dims)])
+
+        matrix[i] = point + labels[i] * separator
 
     dataFrame = pd.DataFrame(matrix)
-    return dataFrame
+    return labels, dataFrame
 
 
 class Classifier(object):
@@ -103,7 +102,7 @@ class Classifier(object):
                      point_cardinality,
                      bounds=bounds,
                      constraints={'type': 'eq',
-                                  'fun': self.kernel_constrain})
+                                  'fun': self.kernel_constrain}).x
 
         self.filter_lagrange_multipliers(lagrange_multipliers)
         self.determine_bias()
@@ -114,9 +113,8 @@ class Classifier(object):
         for key, lagrange_a in self.support_vectors.items():
             classification += lagrange_a * self.labels[key]\
                 * self.kernel_function(point, self.data[key])\
-                - self.bias
 
-        return classification
+        return classification - self.bias
 
 
 def simpleKern(a, b):
@@ -124,8 +122,20 @@ def simpleKern(a, b):
     return np.dot(a, b)
 
 
-dataFrame = random_clusters(2)
-preComputePsuper(dataFrame, simpleKern)
+GROUP_SPREAD = 10
+CLUSTER_SEPARATION = 10
+NUMBER_OF_POINTS = 20
+DIMENSION = 3
+
+
+(labels, dataFrame) = random_clusters(GROUP_SPREAD,
+                                      CLUSTER_SEPARATION,
+                                      NUMBER_OF_POINTS,
+                                      DIMENSION)
+
+bounds = np.array([(0, None) for _ in range(NUMBER_OF_POINTS)])
+
+classifier = Classifier(kernel_function=simpleKern)
 
 print(superSum(np.zeros(SIZE)))
 print(dataFrame)
