@@ -55,7 +55,7 @@ class Classifier(object):
         self.pre_processed_kernel =\
             np.matmul(np.transpose(matrix_labels), matrix_labels)
 
-        for idx, datax in self.data.itterow():
+        for idx, datax in self.data.iterrows():
             for idy, datay in self.data.iterrows():
                 self.pre_processed_kernel[idx, idy] *=\
                     self.kernel_function(datax, datay)
@@ -137,39 +137,29 @@ bounds = np.array([(0, None) for _ in range(NUMBER_OF_POINTS)])
 
 classifier = Classifier(kernel_function=simpleKern)
 
-print(superSum(np.zeros(SIZE)))
 print(dataFrame)
 
-aaa = minimize(superSum, np.zeros(SIZE), 
-               bounds=np.array([(0, None) for _ in range(SIZE)]),
-               constraints={'type': 'eq', 'fun': zerofun})
+classifier.learn(dataFrame, labels, bounds)
 
-print(aaa)
 
-aas = getTheFuckingAs(aaa.x)
+# print(indicatorFunc(aas, b, dataFrame, simpleKern, np.array([100, 100])))
+# print(indicatorFunc(aas, b, dataFrame, simpleKern, np.array([-100, -100])))
 
-b = calculateB(aas, dataFrame, simpleKern)
+# dfw = dataFrame.copy()
+# dfw['label'] = LABELS
+# dp = dfw[dfw['label']==1]
+# dp.columns = ['A', 'B', 'L']
+# plt.scatter(dp['A'], dp['B'])
 
-print(b)
+# dp = dfw[dfw['label']==-1]
+# dp.columns = ['A', 'B', 'L']
+# plt.scatter(dp['A'], dp['B'])
 
-print(indicatorFunc(aas, b, dataFrame, simpleKern, np.array([100, 100])))
-print(indicatorFunc(aas, b, dataFrame, simpleKern, np.array([-100, -100])))
+# xgrid = np.linspace(-5, 5)
+# ygrid = np.linspace(-5, 5)
 
-dfw = dataFrame.copy()
-dfw['label'] = LABELS
-dp = dfw[dfw['label']==1]
-dp.columns = ['A', 'B', 'L']
-plt.scatter(dp['A'], dp['B'])
+# grid = np.array([[indicatorFunc(aas, b, dataFrame, simpleKern, np.array([x,y])) for y in ygrid] for x in xgrid])
 
-dp = dfw[dfw['label']==-1]
-dp.columns = ['A', 'B', 'L']
-plt.scatter(dp['A'], dp['B'])
+# plt.contour(xgrid, ygrid, grid, (-1.0, 0.0, 1.0), colors=('red', 'black', 'blue'), linewidth=(1,3,1))
 
-xgrid = np.linspace(-5, 5)
-ygrid = np.linspace(-5, 5)
-
-grid = np.array([[indicatorFunc(aas, b, dataFrame, simpleKern, np.array([x,y])) for y in ygrid] for x in xgrid])
-
-plt.contour(xgrid, ygrid, grid, (-1.0, 0.0, 1.0), colors=('red', 'black', 'blue'), linewidth=(1,3,1))
-
-plt.show()
+# plt.show()
