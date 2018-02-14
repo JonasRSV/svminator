@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 PsuperVector = None
 LABELS = None
 SIZE = 40
-CLUSTER_SEP = 1
-GROUP_SPREAD = 1
+CLUSTER_SEP = 2
+GROUP_SPREAD = 2
 
 def sign(n):
     """K."""
@@ -32,7 +32,7 @@ def random_clusters(dim):
     matrix = np.zeros(matrix_dim)
 
     for i in range(SIZE):
-        point = np.array([GROUP_SPREAD * rn.random() for _ in range(dim)])
+        point = np.array([GROUP_SPREAD * (rn.random()-0.5) for _ in range(dim)])
         matrix[i] = point + LABELS[i] * separator
 
     dataFrame = pd.DataFrame(matrix)
@@ -50,8 +50,6 @@ def preComputePsuper(data, kern):
     global LABELS
     
     PsuperVector = np.matmul(np.transpose(np.matrix(LABELS)), np.matrix(LABELS))
-    print(PsuperVector)
-    print(LABELS)
     for x, datax in data.iterrows():
         for y, datay in data.iterrows():
             PsuperVector[x, y] *= kern(datax, datay)
@@ -89,7 +87,7 @@ def calculateB(allAs, data, kern):
             su += allAs[idx] * LABELS[idx]\
                 * kern(s, dat)
 
-    return su - LABELS[1]
+    return su - LABELS[0]
 
 
 def indicatorFunc(allAs, b, data, kern, s):
@@ -103,10 +101,9 @@ def indicatorFunc(allAs, b, data, kern, s):
 
 dataFrame = random_clusters(2)
 preComputePsuper(dataFrame, simpleKern)
+
 print(superSum(np.zeros(SIZE)))
-
 print(dataFrame)
-
 
 aaa = minimize(superSum, np.zeros(SIZE), 
                bounds=np.array([(0, None) for _ in range(SIZE)]),
@@ -133,8 +130,8 @@ dp = dfw[dfw['label']==-1]
 dp.columns = ['A', 'B', 'L']
 plt.scatter(dp['A'], dp['B'])
 
-xgrid = np.linspace(-2, 3)
-ygrid = np.linspace(-2, 3)
+xgrid = np.linspace(-5, 5)
+ygrid = np.linspace(-5, 5)
 
 grid = np.array([[indicatorFunc(aas, b, dataFrame, simpleKern, np.array([x,y])) for y in ygrid] for x in xgrid])
 
