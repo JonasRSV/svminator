@@ -5,13 +5,47 @@ import pandas as pd
 import matplotlib as mp
 
 PsuperVector = None
-LABELS = 0
+LABELS = None
+SIZE = 20
+CLUSTER_SEP = 100
+
 
 def sign(n):
+    """K."""
     if n >= 0:
         return 1
     else:
         return -1
+
+
+def random_clusters(dim):
+    """Generate two clusters in dim dimensional space."""
+    global LABELS
+    global CLUSTER_SEP
+    global SIZE
+
+    LABELS = [sign(rn.randrange(-10, 10)) for _ in range(SIZE)]
+
+    separator = np.array([CLUSTER_SEP for _ in range(dim)])
+
+    matrix_dim = (SIZE, dim)
+    matrix = np.zeros(matrix_dim)
+    for i in range(SIZE):
+        point = np.array([rn.random() for _ in range(dim)])
+
+        if LABELS[i] == 1:
+            point = point + separator
+        else:
+            point = point - separator
+
+        matrix[i] = point
+
+
+    dataFrame = pd.DataFrame(matrix)
+    dataFrame['label'] = LABELS
+
+    return dataFrame
+
 
 def simpleKern(a,b):
     return np.dot(a,b)
@@ -39,15 +73,7 @@ def zerofun(a):
     return np.dot(a,LABELS) == 0
 
 
-SIZE = 20
-
-dataFrame = pd.DataFrame()
-for i in range(3):
-    randomArray = [rn.random() for _ in range(SIZE)]
-    dataFrame["data " + str(i)] = randomArray
-
-dataFrame["label"] = [sign(rn.randrange(-10, 10)) for _ in range(SIZE)]
-LABELS = np.array(dataFrame['label'])
+dataFrame = random_clusters(4)
 preComputePsuper(dataFrame, simpleKern)
 print(superSum(np.zeros(SIZE)))
 
