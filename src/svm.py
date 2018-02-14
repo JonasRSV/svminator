@@ -10,6 +10,7 @@ SIZE = 40
 CLUSTER_SEP = 1
 GROUP_SPREAD = 1
 
+
 def sign(n):
     """K."""
     if n >= 0:
@@ -39,66 +40,95 @@ def random_clusters(dim):
     return dataFrame
 
 
+class Classifier(object):
+    """SVM classifier object."""
+
+    def __init__(self, kernel_function=None):
+        """Constructor."""
+        self.kernel_function = kernel_function
+        self.data = None
+        self.labels = None
+        self.pre_processed_kernel = None
+        self.bias = None
+        self.support_vectors = None
+
+    def pre_process_classifiers(self, data, labels):
+        """Preprocess first step of cost function."""
+        self.data = data
+        self.labels = labels
+
+        matrix_labels = np.matrix(self.labels)
+
+        self.pre_processed_kernel =\
+            np.matmul(np.transpose(matrix_labels), matrix_labels)
+
+        for idx, datax in self.data.itterow():
+            for idy, datay in self.data.iterrows():
+                self.pre_processed_kernel[idx, idy] *=\
+                    self.kernel_function(datax, datay)
+
+    def error_function(self, a):
+        """Minimize for good SVM."""
+        lagrange_multiplies = np.matmul(a, np.transpose(a))
+        kernel_values = lagrange_multiplies * self.pre_processed_kernel
+
+        return 0.5 * np.sum(kernel_values) - np.sum(a)
+
+    def kernel_constrain(self, a):
+        """Constraint for the lagrange thingy to work."""
+        return np.dot(a, self.labels) == 0
+
+    def filter_lagrange_multipliers(self, list_of_multipliers):
+        """Filter zero or practically zero values of a."""
+        self.support_vectors = dict()
+        for idx, sv in enumerate(list_of_multipliers):
+            if abs(sv) > 0.00001:
+                self.support_vectors[idx] = sv
+
+    def determine_bias(self):
+        """Determine the bias of the SVM."""
+        sv_key = rn.choice(self.support_vectors.keys())
+        a_sv = self.data[sv_key]
+
+        bias = 0
+        for index, point in self.data.iterrows():
+            if index in self.support_vectors:
+                bias += self.support_vectors[index]\
+                    * self.kernel_function(a_sv, point)
+
+        self.bias = bias - self.labels[sv_key]
+
+    def learn(self, data, labels, bounds):
+        """Create classifier."""
+        self.pre_process_classifiers(data, labels)
+
+        point_cardinality = len(labels)
+
+        lagrange_multipliers =\
+            minimize(self.error_function,
+                     point_cardinality,
+                     bounds=bounds,
+                     constraints={'type': 'eq',
+                                  'fun': self.kernel_constrain})
+
+        self.filter_lagrange_multipliers(lagrange_multipliers)
+        self.determine_bias()
+
+    def indicator_func(self, point):
+        """Classify a point."""
+        classification = 0
+        for key, lagrange_a in self.support_vectors.items():
+            classification += lagrange_a * self.labels[key]\
+                * self.kernel_function(point, self.data[key])\
+                - self.bias
+
+        return classification
+
+
 def simpleKern(a, b):
-    """Simple kernel."""
+    """Linear Kernel Function."""
     return np.dot(a, b)
 
-
-def preComputePsuper(data, kern):
-    """Simple kernel."""
-    global PsuperVector
-    global LABELS
-    
-    PsuperVector = np.matmul(np.transpose(np.matrix(LABELS)), np.matrix(LABELS))
-    print(PsuperVector)
-    print(LABELS)
-    for x, datax in data.iterrows():
-        for y, datay in data.iterrows():
-            PsuperVector[x, y] *= kern(datax, datay)
-
-
-def superSum(a):
-    """Simple kernel."""
-    aa = np.matmul(a, np.transpose(a))
-    ss = aa * PsuperVector
-    return np.sum(ss) / 2 - np.sum(a)
-
-
-def zerofun(a):
-    """Simple kernel."""
-    global LABELS
-    return np.dot(a, LABELS) == 0
-
-
-def getTheFuckingAs(allAs):
-    """Simple kernel."""
-    b = {}
-    for idx, a in enumerate(allAs):
-        if abs(a) < 0.00001:
-            continue
-        b[idx] = a
-    return b
-
-
-def calculateB(allAs, data, kern):
-    """Fuck."""
-    s = np.array(data.ix[1])
-    su = 0
-    for idx, dat in data.iterrows():
-        if idx in allAs:
-            su += allAs[idx] * LABELS[idx]\
-                * kern(s, dat)
-
-    return su - LABELS[1]
-
-
-def indicatorFunc(allAs, b, data, kern, s):
-    """Shit."""
-    su = 0
-    for idx, dat in data.iterrows():
-        if idx in allAs:
-            su += allAs[idx] * LABELS[idx] * kern(dat, s)
-    return su - b
 
 
 dataFrame = random_clusters(2)
