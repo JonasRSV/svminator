@@ -163,9 +163,6 @@ class Classifier(object):
         sv_key = rn.choice(list(self.support_vectors.keys()))
         sv = self.data[sv_key, :]
 
-        print("SV indic", self.indicator_func(sv))
-        print("Actual Value", self.labels.A1[sv_key])
-
         xgrid = np.linspace(-5, 5)
         ygrid = np.linspace(-5, 5)
 
@@ -188,7 +185,11 @@ class Classifier(object):
                         'number_of_points': 30},
                        {'label': 1,
                         'group_spread': 1,
-                        'center': np.array([-4, 1]),
+                        'center': np.array([0, 0]),
+                        'number_of_points': 20},
+                       {'label': -1,
+                        'group_spread': 2,
+                        'center': np.array([0,-4]),
                         'number_of_points': 20}],
                        2)
 
