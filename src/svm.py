@@ -13,9 +13,6 @@ def sign(n):
     else:
         return -1
 
-def circular_cluster(rad, angle, center):
-    pass
-
 def gen_clusters(clusterSpecs, dim):
     totalNumOfPoints = 0
     for spec in clusterSpecs:
@@ -30,8 +27,8 @@ def gen_clusters(clusterSpecs, dim):
             matrix[i] = point + spec['center']
             labels[i] = spec['label']
             i+=1
-
-    return (np.matrix(labels), matrix)
+    randomize = np.random.permutation(totalNumOfPoints)
+    return (np.matrix(labels[randomize]), matrix[randomize])
 
         # {label: -1, group_spred: 1, NUMBER_OF_POINTS: 10, center: point}
         
@@ -199,17 +196,18 @@ class Classifier(object):
                         'number_of_points': 20}],
                        2)
 
+
 classifier_linear = Classifier(d, l)
 classifier_poly = Classifier(d, l, kernel_function=poly_kernel(2))
 classifier_radial = Classifier(d, l,
                                kernel_function=radial_basis_kernel(40))
 
 
-# classifier_linear.learn()
-# classifier_linear.print()
+classifier_linear.learn()
+classifier_linear.print()
 
-classifier_poly.learn()
-classifier_poly.print()
+# classifier_poly.learn()
+# classifier_poly.print()
 
 # classifier_radial.print()
 # classifier_radial.learn()
