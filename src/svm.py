@@ -30,11 +30,7 @@ def gen_clusters(clusterSpecs, dim):
     randomize = np.random.permutation(totalNumOfPoints)
     return (np.matrix(labels[randomize]), matrix[randomize])
 
-        # {label: -1, group_spred: 1, NUMBER_OF_POINTS: 10, center: point}
         
-        
-
-
 def random_clusters(group_spread, cluster_separation, number_of_points, dims):
     """Generate two clusters in dim dimensional space."""
     labels = np.array([sign(rn.randrange(-10, 10))
@@ -161,7 +157,7 @@ class Classifier(object):
 
     def print(self):
         """Plot support vectors."""
-        plt.scatter(self.data[:, 0], self.data[:, 1],
+        plt.scatter(self.data[:, 1], self.data[:, 0],
                     c=['r' if i == 1 else 'b' for i in self.labels.A1])
 
         sv_key = rn.choice(list(self.support_vectors.keys()))
@@ -203,12 +199,12 @@ classifier_radial = Classifier(d, l,
                                kernel_function=radial_basis_kernel(40))
 
 
-classifier_linear.learn()
-classifier_linear.print()
+# classifier_linear.learn()
+# classifier_linear.print()
 
-# classifier_poly.learn()
-# classifier_poly.print()
+classifier_poly.learn()
+classifier_poly.print()
 
-# classifier_radial.print()
 # classifier_radial.learn()
+# classifier_radial.print()
 
