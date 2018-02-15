@@ -51,8 +51,8 @@ class Classifier(object):
 
     def pre_process_classifiers(self):
         """Preprocess first step of cost function."""
-        self.pre_processed_kernel = np.matmul(labels.T, labels)
-
+        self.pre_processed_kernel = np.dot(labels.T, labels)
+        
         for idx, rowx in enumerate(self.data):
             for idy, rowy in enumerate(self.data):
                 self.pre_processed_kernel[idx, idy] *=\
@@ -60,11 +60,20 @@ class Classifier(object):
 
     def error_function(self, a):
         """Minimize for good SVM."""
-        a = np.matrix(a)
-        lagrange_multiplies = np.matmul(a.T, a)
-        kernel_values = lagrange_multiplies * self.pre_processed_kernel
+        su = 0
+        for idx, alphax in enumerate(a):
+            for idy, alphay in enumerate(a):
+                su += alphax * alphay * self.labels.A1[idx] * self.labels.A1[idy]\
+                        * self.kernel_function(self.data[idx, :], self.data[idy, :])
+        
+        return (su/2 - np.sum(a))
+        # a = np.matrix(a)
+        # lagrange_multiplies = np.dot(a.T, a)
+        # print(lagrange_multiplies)
+        # print(a)
+        # kernel_values = np.dot(lagrange_multiplies, self.pre_processed_kernel)
 
-        return np.sum(kernel_values) * 0.5 - np.sum(a)
+        # return np.sum(kernel_values) * 0.5 - np.sum(a)
 
     def kernel_constrain(self, a):
         """Constraint for the lagrange thingy to work."""
@@ -104,6 +113,7 @@ class Classifier(object):
                      constraints={'type': 'eq',
                                   'fun': self.kernel_constrain})
 
+
         lagrange_multipliers = minimize_ret.x
         self.filter_lagrange_multipliers(lagrange_multipliers)
         self.determine_bias()
@@ -115,7 +125,7 @@ class Classifier(object):
             classification += alpha * self.labels.A1[key]\
                 * self.kernel_function(point, self.data[key,:])
 
-        return classification - self.bias 
+        return classification - self.bias
 
     def print(self):
 
@@ -144,7 +154,7 @@ class Classifier(object):
 
 GROUP_SPREAD = 10
 CLUSTER_SEPARATION = 10
-NUMBER_OF_POINTS = 100
+NUMBER_OF_POINTS = 50
 DIMENSION = 2
 
 
@@ -158,9 +168,5 @@ classifier = Classifier(data, labels)
 bounds = np.array([(0, None) for _ in range(NUMBER_OF_POINTS)])
 classifier.learn(bounds)
 classifier.print()
-
-
-# print(indicatorFunc(aas, b, dataFrame, simpleKern, np.array([100, 100])))
-# print(indicatorFunc(aas, b, dataFrame, simpleKern, np.array([-100, -100])))
 
 
