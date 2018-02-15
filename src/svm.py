@@ -1,7 +1,6 @@
 import math
 import random as rn
 import numpy as np
-import math
 from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 
@@ -13,24 +12,26 @@ def sign(n):
     else:
         return -1
 
-def gen_clusters(clusterSpecs, dim):
-    totalNumOfPoints = 0
-    for spec in clusterSpecs:
-        totalNumOfPoints+=spec['number_of_points']
-    labels = np.array([0 for _ in range(totalNumOfPoints)])
-    matrix = np.zeros((totalNumOfPoints, dim))
+
+def gen_clusters(cluster_specs, dim):
+    """Generate clusters."""
+    total_number_of_points = 0
+    for spec in cluster_specs:
+        total_number_of_points += spec['number_of_points']
+    labels = np.array([0 for _ in range(total_number_of_points)])
+    matrix = np.zeros((total_number_of_points, dim))
     i = 0
-    for spec in clusterSpecs:
+    for spec in cluster_specs:
         for n in range(spec['number_of_points']):
             point = np.array([spec['group_spread'] * (rn.random() - 0.5)
                               for _ in range(dim)])
             matrix[i] = point + spec['center']
             labels[i] = spec['label']
-            i+=1
-    randomize = np.random.permutation(totalNumOfPoints)
+            i += 1
+    randomize = np.random.permutation(total_number_of_points)
     return (np.matrix(labels[randomize]), matrix[randomize])
 
-        
+
 def random_clusters(group_spread, cluster_separation, number_of_points, dims):
     """Generate two clusters in dim dimensional space."""
     labels = np.array([sign(rn.randrange(-10, 10))
@@ -189,9 +190,9 @@ class Classifier(object):
                         'number_of_points': 20},
                        {'label': -1,
                         'group_spread': 2,
-                        'center': np.array([0,-4]),
+                        'center': np.array([0, -4]),
                         'number_of_points': 20}],
-                       2)
+                      2)
 
 
 classifier_linear = Classifier(d, l)
