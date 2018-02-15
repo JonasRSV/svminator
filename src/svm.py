@@ -35,6 +35,7 @@ def random_clusters(group_spread, cluster_separation, number_of_points, dims):
 
     return np.matrix(labels), matrix
 
+
 def simpleKern(a, b):
     """Linear Kernel Function."""
     return np.dot(np.matrix(a).A1, np.matrix(b).A1)
@@ -43,11 +44,11 @@ def simpleKern(a, b):
 class Classifier(object):
     """SVM classifier object."""
 
-    def __init__(self, data, lables, kernel_function=simpleKern):
+    def __init__(self, data, labels, kernel_function=simpleKern):
         """Constructor."""
         self.kernel_function = kernel_function
         self.data = data
-        self.labels = lables
+        self.labels = labels
 
         self.pre_processed_kernel = None
         self.bias = None
@@ -55,23 +56,21 @@ class Classifier(object):
 
     def pre_process_classifiers(self):
         """Preprocess first step of cost function."""
-        a = np.array([[x*y for x in labels.A1] for y in labels.A1])
-        b = np.array([[self.kernel_function(x,y) for x in self.data] for y in self.data])
-        self.pre_processed_kernel = a*b
+        classes = np.array([[x * y for x in labels.A1]
+                           for y in labels.A1])
+
+        kernel_values = np.array([[self.kernel_function(x, y)
+                                   for x in self.data]
+                                  for y in self.data])
+
+        self.pre_processed_kernel = classes * kernel_values
 
     def error_function(self, a):
         """Minimize for good SVM."""
-        aa = np.array([[x*y for x in a] for y in a])
-        su = np.sum(aa*self.pre_processed_kernel)
-        
-        return (su/2 - np.sum(a))
-        # a = np.matrix(a)
-        # lagrange_multiplies = np.dot(a.T, a)
-        # print(lagrange_multiplies)
-        # print(a)
-        # kernel_values = np.dot(lagrange_multiplies, self.pre_processed_kernel)
+        lagrange_mults = np.array([[x * y for x in a] for y in a])
+        su = np.sum(lagrange_mults * self.pre_processed_kernel)
 
-        # return np.sum(kernel_values) * 0.5 - np.sum(a)
+        return (su / 2 - np.sum(a))
 
     def kernel_constrain(self, a):
         """Constraint for the lagrange thingy to work."""
@@ -111,7 +110,6 @@ class Classifier(object):
                      constraints={'type': 'eq',
                                   'fun': self.kernel_constrain})
 
-
         lagrange_multipliers = minimize_ret.x
         self.filter_lagrange_multipliers(lagrange_multipliers)
         self.determine_bias()
@@ -121,27 +119,31 @@ class Classifier(object):
         classification = 0
         for key, alpha in self.support_vectors.items():
             classification += alpha * self.labels.A1[key]\
-                * self.kernel_function(point, self.data[key,:])
+                * self.kernel_function(point, self.data[key, :])
 
         return classification - self.bias
 
     def print(self):
-
-        plt.scatter(self.data[:,0], self.data[:,1], 
-                    c=['r' if i==1 else 'b' for i in self.labels.A1])
-
+        """Plot support vectors."""
+        plt.scatter(self.data[:, 0], self.data[:, 1],
+                    c=['r' if i == 1 else 'b' for i in self.labels.A1])
 
         sv_key = rn.choice(list(self.support_vectors.keys()))
         sv = self.data[sv_key, :]
+
         print("SV indic", self.indicator_func(sv))
         print("Actual Value", self.labels.A1[sv_key])
 
         xgrid = np.linspace(-25, 25)
         ygrid = np.linspace(-25, 25)
 
-        grid = np.matrix([[self.indicator_func(np.matrix([x,y])) for y in ygrid] for x in xgrid])
+        grid = np.matrix([
+            [self.indicator_func(np.matrix([x, y]))
+             for y in ygrid]
+            for x in xgrid])
+
         # CX = plt.contour(xgrid, ygrid, grid)
-        
+
         CX = plt.contour(xgrid, ygrid, grid, (-1.0, 0.0, 1.0),
                          colors=('red', 'black', 'blue'),
                          linewidths=(1, 3, 1))
@@ -167,5 +169,4 @@ classifier = Classifier(data, labels)
 bounds = np.array([(0, None) for _ in range(NUMBER_OF_POINTS)])
 classifier.learn(bounds)
 classifier.print()
-
 
