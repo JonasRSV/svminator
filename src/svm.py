@@ -1,7 +1,6 @@
 import random as rn
 import numpy as np
 from scipy.optimize import minimize
-import pandas as pd
 import matplotlib.pyplot as plt
 
 
@@ -51,20 +50,14 @@ class Classifier(object):
 
     def pre_process_classifiers(self):
         """Preprocess first step of cost function."""
-        self.pre_processed_kernel = np.dot(labels.T, labels)
-        
-        for idx, rowx in enumerate(self.data):
-            for idy, rowy in enumerate(self.data):
-                self.pre_processed_kernel[idx, idy] *=\
-                    self.kernel_function(rowx, rowy)
+        a = np.array([[x*y for x in labels.A1] for y in labels.A1])
+        b = np.array([[self.kernel_function(x,y) for x in self.data] for y in self.data])
+        self.pre_processed_kernel = a*b
 
     def error_function(self, a):
         """Minimize for good SVM."""
-        su = 0
-        for idx, alphax in enumerate(a):
-            for idy, alphay in enumerate(a):
-                su += alphax * alphay * self.labels.A1[idx] * self.labels.A1[idy]\
-                        * self.kernel_function(self.data[idx, :], self.data[idy, :])
+        aa = np.array([[x*y for x in a] for y in a])
+        su = np.sum(aa*self.pre_processed_kernel)
         
         return (su/2 - np.sum(a))
         # a = np.matrix(a)
@@ -88,9 +81,9 @@ class Classifier(object):
         for key, alpha in self.support_vectors.items():
             bias += alpha * self.labels.A1[key]\
                 * self.kernel_function(a_sv, self.data[key, :])
-            print("New Bias", bias)
 
         self.bias = bias - self.labels.A1[sv_key]
+        print("Bias", self.bias)
 
     def filter_lagrange_multipliers(self, list_of_multipliers):
         """Filter zero or practically zero values of a."""
@@ -154,7 +147,7 @@ class Classifier(object):
 
 GROUP_SPREAD = 10
 CLUSTER_SEPARATION = 10
-NUMBER_OF_POINTS = 50
+NUMBER_OF_POINTS = 100
 DIMENSION = 2
 
 
