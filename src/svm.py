@@ -11,6 +11,11 @@ def sign(n):
     else:
         return -1
 
+def gen_clusters(clusterSpecs, dim):
+    labels = np.array([])
+    for spec in clusterSpecs:
+        {label: -1, group_spred: 1, NUMBER_OF_POINTS,
+
 
 def random_clusters(group_spread, cluster_separation, number_of_points, dims):
     """Generate two clusters in dim dimensional space."""
@@ -149,6 +154,7 @@ GROUP_SPREAD = 10
 CLUSTER_SEPARATION = 10
 NUMBER_OF_POINTS = 400
 DIMENSION = 2
+
 
 
 (labels, data) = random_clusters(GROUP_SPREAD,
