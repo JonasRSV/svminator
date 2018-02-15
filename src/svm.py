@@ -51,14 +51,12 @@ class Classifier(object):
 
     def pre_process_classifiers(self):
         """Preprocess first step of cost function."""
-
         self.pre_processed_kernel = np.matmul(labels.T, labels)
 
         for idx, rowx in enumerate(self.data):
             for idy, rowy in enumerate(self.data):
                 self.pre_processed_kernel[idx, idy] *=\
                     self.kernel_function(rowx, rowy)
-        print(self.pre_processed_kernel)
 
     def error_function(self, a):
         """Minimize for good SVM."""
@@ -66,23 +64,22 @@ class Classifier(object):
         lagrange_multiplies = np.matmul(a.T, a)
         kernel_values = lagrange_multiplies * self.pre_processed_kernel
 
-        tmp = np.sum(kernel_values) - 2 * np.sum(a)
-        return tmp
+        return np.sum(kernel_values) * 0.5 - np.sum(a)
 
-    def kernel_constrain(self, a, p=False):
+    def kernel_constrain(self, a):
         """Constraint for the lagrange thingy to work."""
         return np.dot(np.matrix(a).A1, self.labels.A1)
 
     def determine_bias(self):
         """Determine the bias of the SVM."""
         sv_key = rn.choice(list(self.support_vectors.keys()))
-        a_sv = np.matrix(self.data[sv_key,:])
+        a_sv = self.data[sv_key, :]
 
         bias = 0
-        for index, point in enumerate(self.data):
-            if index in self.support_vectors:
-                bias += self.support_vectors[index]\
-                    * self.kernel_function(a_sv, point)
+        for key, alpha in self.support_vectors.items():
+            bias += alpha * self.labels.A1[key]\
+                * self.kernel_function(a_sv, self.data[key, :])
+            print("New Bias", bias)
 
         self.bias = bias - self.labels.A1[sv_key]
 
@@ -90,8 +87,9 @@ class Classifier(object):
         """Filter zero or practically zero values of a."""
         self.support_vectors = dict()
         for idx, sv in enumerate(list_of_multipliers):
-            if abs(sv) > 0.00001:
+            if abs(sv) > 0.000001:
                 self.support_vectors[idx] = sv
+        print("As left", self.support_vectors)
 
     def learn(self, bounds):
         """Create classifier."""
@@ -105,7 +103,7 @@ class Classifier(object):
                      bounds=bounds,
                      constraints={'type': 'eq',
                                   'fun': self.kernel_constrain})
-        print(minimize_ret)
+
         lagrange_multipliers = minimize_ret.x
         self.filter_lagrange_multipliers(lagrange_multipliers)
         self.determine_bias()
@@ -113,33 +111,40 @@ class Classifier(object):
     def indicator_func(self, point):
         """Classify a point."""
         classification = 0
-        for key, lagrange_a in self.support_vectors.items():
-            classification += lagrange_a * self.labels.A1[key]\
+        for key, alpha in self.support_vectors.items():
+            classification += alpha * self.labels.A1[key]\
                 * self.kernel_function(point, self.data[key,:])
 
-        return classification - self.bias
+        return classification - self.bias 
 
     def print(self):
 
-        plt.scatter(self.data[:,0], self.data[:,1], c=['r' if i==1 else 'b' for i in self.labels.A1])
+        plt.scatter(self.data[:,0], self.data[:,1], 
+                    c=['r' if i==1 else 'b' for i in self.labels.A1])
 
-        xgrid = np.linspace(-15, 15)
-        ygrid = np.linspace(-15, 15)
 
-        print("Bias", self.bias)
+        sv_key = rn.choice(list(self.support_vectors.keys()))
+        sv = self.data[sv_key, :]
+        print("SV indic", self.indicator_func(sv))
+        print("Actual Value", self.labels.A1[sv_key])
 
-    
+        xgrid = np.linspace(-25, 25)
+        ygrid = np.linspace(-25, 25)
+
         grid = np.matrix([[self.indicator_func(np.matrix([x,y])) for y in ygrid] for x in xgrid])
+        # CX = plt.contour(xgrid, ygrid, grid)
         
-        plt.contour(xgrid, ygrid, grid, (-1.0, 0.0, 1.0),
-                    colors=('red', 'black', 'blue'),
-                    linewidths=(1, 3, 1))
+        CX = plt.contour(xgrid, ygrid, grid, (-1.0, 0.0, 1.0),
+                         colors=('red', 'black', 'blue'),
+                         linewidths=(1, 3, 1))
+
+        plt.clabel(CX, fontsize=9, inline=1)
         plt.show()
 
 
 GROUP_SPREAD = 10
 CLUSTER_SEPARATION = 10
-NUMBER_OF_POINTS = 250
+NUMBER_OF_POINTS = 100
 DIMENSION = 2
 
 
