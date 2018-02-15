@@ -1,5 +1,6 @@
 import random as rn
 import numpy as np
+import math
 from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 
@@ -31,15 +32,33 @@ def random_clusters(group_spread, cluster_separation, number_of_points, dims):
     return np.matrix(labels), matrix
 
 
-def simpleKern(a, b):
+def simple_kernel(a, b):
     """Linear Kernel Function."""
     return np.dot(np.matrix(a).A1, np.matrix(b).A1)
+
+
+def poly_kernel(grade):
+    """Polynomial Kernel Function."""
+    def kernel(a, b):
+        return math.pow((np.dot(np.matrix(a).A1, np.matrix(b).A1) + 1), grade)
+
+    return kernel
+
+
+def radial_basis_kernel(radial_basis):
+    """Radial basis kernel Function."""
+    def kernel(a, b):
+        return math.exp(
+            -math.pow(np.dot(a, b), 2)
+            / (2 * math.pow(radial_basis, 2)))
+
+    return kernel
 
 
 class Classifier(object):
     """SVM classifier object."""
 
-    def __init__(self, data, labels, kernel_function=simpleKern):
+    def __init__(self, data, labels, kernel_function=simple_kernel):
         """Constructor."""
         self.kernel_function = kernel_function
         self.data = data
@@ -149,7 +168,7 @@ class Classifier(object):
 
 GROUP_SPREAD = 10
 CLUSTER_SEPARATION = 10
-NUMBER_OF_POINTS = 400
+NUMBER_OF_POINTS = 40
 DIMENSION = 2
 
 
@@ -158,9 +177,18 @@ DIMENSION = 2
                                  NUMBER_OF_POINTS,
                                  DIMENSION)
 
-classifier = Classifier(data, labels)
+classifier_linear = Classifier(data, labels)
+classifier_poly = Classifier(data, labels, kernel_function=poly_kernel(2))
+classifier_radial = Classifier(data, labels,
+                               kernel_function=radial_basis_kernel(40))
+
 
 bounds = np.array([(0, None) for _ in range(NUMBER_OF_POINTS)])
-classifier.learn(bounds)
-classifier.print()
+# classifier_linear.learn(bounds)
+# classifier_poly.learn(bounds)
+classifier_radial.learn(bounds)
+
+# classifier_linear.print()
+# classifier_poly.print()
+classifier_radial.print()
 
