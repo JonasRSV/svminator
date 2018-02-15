@@ -1,3 +1,4 @@
+import math
 import random as rn
 import numpy as np
 from scipy.optimize import minimize
@@ -11,10 +12,29 @@ def sign(n):
     else:
         return -1
 
+def circular_cluster(rad, angle, center):
+    pass
+
 def gen_clusters(clusterSpecs, dim):
-    labels = np.array([])
+    totalNumOfPoints = 0
     for spec in clusterSpecs:
-        {label: -1, group_spred: 1, NUMBER_OF_POINTS,
+        totalNumOfPoints+=spec['number_of_points']
+    labels = np.array([0 for _ in range(totalNumOfPoints)])
+    matrix = np.zeros((totalNumOfPoints, dim))
+    i = 0
+    for spec in clusterSpecs:
+        for n in range(spec['number_of_points']):
+            point = np.array([spec['group_spread'] * (rn.random() - 0.5)
+                              for _ in range(dim)])
+            matrix[i] = point + spec['center']
+            labels[i] = spec['label']
+            i+=1
+
+    return (np.matrix(labels), matrix)
+
+        # {label: -1, group_spred: 1, NUMBER_OF_POINTS: 10, center: point}
+        
+        
 
 
 def random_clusters(group_spread, cluster_separation, number_of_points, dims):
@@ -56,8 +76,8 @@ class Classifier(object):
 
     def pre_process_classifiers(self):
         """Preprocess first step of cost function."""
-        classes = np.array([[x * y for x in labels.A1]
-                           for y in labels.A1])
+        classes = np.array([[x * y for x in self.labels.A1]
+                           for y in self.labels.A1])
 
         kernel_values = np.array([[self.kernel_function(x, y)
                                    for x in self.data]
@@ -95,13 +115,13 @@ class Classifier(object):
         for idx, sv in enumerate(list_of_multipliers):
             if abs(sv) > 0.000001:
                 self.support_vectors[idx] = sv
-        print("As left", self.support_vectors)
 
-    def learn(self, bounds):
+    def learn(self, upperBound=None):
         """Create classifier."""
         self.pre_process_classifiers()
 
-        init_point = np.zeros(len(labels.A1))
+        init_point = np.zeros(len(self.labels.A1))
+        bounds = np.array([(0, upperBound) for _ in self.labels.A1])
 
         minimize_ret =\
             minimize(self.error_function,
@@ -134,15 +154,13 @@ class Classifier(object):
         print("SV indic", self.indicator_func(sv))
         print("Actual Value", self.labels.A1[sv_key])
 
-        xgrid = np.linspace(-25, 25)
-        ygrid = np.linspace(-25, 25)
+        xgrid = np.linspace(-5, 5)
+        ygrid = np.linspace(-5, 5)
 
         grid = np.matrix([
             [self.indicator_func(np.matrix([x, y]))
              for y in ygrid]
             for x in xgrid])
-
-        # CX = plt.contour(xgrid, ygrid, grid)
 
         CX = plt.contour(xgrid, ygrid, grid, (-1.0, 0.0, 1.0),
                          colors=('red', 'black', 'blue'),
@@ -152,21 +170,19 @@ class Classifier(object):
         plt.show()
 
 
-GROUP_SPREAD = 10
-CLUSTER_SEPARATION = 10
-NUMBER_OF_POINTS = 400
-DIMENSION = 2
+(l, d) = gen_clusters([{'label': -1,
+                        'group_spread': 2,
+                        'center': np.array([3, 3]),
+                        'number_of_points': 30},
+                       {'label': 1,
+                        'group_spread': 1,
+                        'center': np.array([-4, 1]),
+                        'number_of_points': 20}],
+                       2)
 
 
+classifier = Classifier(d, l)
 
-(labels, data) = random_clusters(GROUP_SPREAD,
-                                 CLUSTER_SEPARATION,
-                                 NUMBER_OF_POINTS,
-                                 DIMENSION)
-
-classifier = Classifier(data, labels)
-
-bounds = np.array([(0, None) for _ in range(NUMBER_OF_POINTS)])
-classifier.learn(bounds)
+classifier.learn()
 classifier.print()
 
