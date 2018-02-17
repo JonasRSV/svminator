@@ -3,6 +3,7 @@ import random as rn
 import numpy as np
 from scipy.optimize import minimize
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 
 def sign(n):
@@ -67,9 +68,10 @@ def poly_kernel(grade):
 def radial_basis_kernel(radial_basis):
     """Radial basis kernel Function."""
     def kernel(a, b):
-        return math.exp(
-            -math.pow(np.dot(a, b), 2)
-            / (2 * math.pow(radial_basis, 2)))
+        delta = np.matrix(a - b).A1
+
+        return math.exp(-np.dot(delta, delta)
+                        / (2 * math.pow(radial_basis, 2)))
 
     return kernel
 
@@ -77,15 +79,16 @@ def radial_basis_kernel(radial_basis):
 class Classifier(object):
     """SVM classifier object."""
 
-    def __init__(self, data, labels, kernel_function=simple_kernel):
+    def __init__(self, data, labels, kernel_function=simple_kernel, slack=None):
         """Constructor."""
         self.kernel_function = kernel_function
         self.data = data
         self.labels = labels
+        self.slack = slack
 
         self.pre_processed_kernel = None
         self.bias = None
-        self.support_vectors = None
+        self.support_weigths = None
 
     def pre_process_classifiers(self):
         """Preprocess first step of cost function."""
@@ -98,24 +101,26 @@ class Classifier(object):
 
         self.pre_processed_kernel = classes * kernel_values
 
-    def error_function(self, a):
+    def error_function(self, alphas):
         """Minimize for good SVM."""
-        lagrange_mults = np.array([[x * y for x in a] for y in a])
-        su = np.sum(lagrange_mults * self.pre_processed_kernel)
+        lagrange_mults_matrix = np.array([[x * y for x in alphas]
+                                          for y in alphas])
 
-        return (su / 2 - np.sum(a))
+        su = np.sum(lagrange_mults_matrix * self.pre_processed_kernel)
 
-    def kernel_constrain(self, a):
+        return (su / 2 - np.sum(alphas))
+
+    def kernel_constrain(self, alphas):
         """Constraint for the lagrange thingy to work."""
-        return np.dot(np.matrix(a).A1, self.labels.A1)
+        return np.dot(np.matrix(alphas).A1, self.labels.A1)
 
     def determine_bias(self):
         """Determine the bias of the SVM."""
-        sv_key = rn.choice(list(self.support_vectors.keys()))
+        sv_key = rn.choice(list(self.support_weigths.keys()))
         a_sv = self.data[sv_key, :]
 
         bias = 0
-        for key, alpha in self.support_vectors.items():
+        for key, alpha in self.support_weigths.items():
             bias += alpha * self.labels.A1[key]\
                 * self.kernel_function(a_sv, self.data[key, :])
 
@@ -124,17 +129,17 @@ class Classifier(object):
 
     def filter_lagrange_multipliers(self, list_of_multipliers):
         """Filter zero or practically zero values of a."""
-        self.support_vectors = dict()
+        self.support_weigths = dict()
         for idx, sv in enumerate(list_of_multipliers):
             if abs(sv) > 0.000001:
-                self.support_vectors[idx] = sv
+                self.support_weigths[idx] = sv
 
-    def learn(self, upperBound=None):
+    def learn(self):
         """Create classifier."""
         self.pre_process_classifiers()
 
         init_point = np.zeros(len(self.labels.A1))
-        bounds = np.array([(0, upperBound) for _ in self.labels.A1])
+        bounds = np.array([(0, self.slack) for _ in init_point])
 
         minimize_ret =\
             minimize(self.error_function,
@@ -143,26 +148,33 @@ class Classifier(object):
                      constraints={'type': 'eq',
                                   'fun': self.kernel_constrain})
 
-        lagrange_multipliers = minimize_ret.x
-        self.filter_lagrange_multipliers(lagrange_multipliers)
+        alphas = minimize_ret.x
+        self.filter_lagrange_multipliers(alphas)
         self.determine_bias()
 
     def indicator_func(self, point):
         """Classify a point."""
         classification = 0
-        for key, alpha in self.support_vectors.items():
+        for key, alpha in self.support_weigths.items():
             classification += alpha * self.labels.A1[key]\
                 * self.kernel_function(point, self.data[key, :])
 
         return classification - self.bias
 
-    def print(self):
+    def print(self, plotter):
         """Plot support vectors."""
-        plt.scatter(self.data[:, 1], self.data[:, 0],
+        # print("errors:", self.errors)
+        print("alphas:", self.support_weigths)
+
+        z_axis = []
+        for point in self.data:
+            z_axis.append(self.indicator_func(point))
+
+        plotter.scatter(xs=self.data[:, 1], ys=self.data[:, 0], zs=z_axis,
                     c=['r' if i == 1 else 'b' for i in self.labels.A1])
 
-        sv_key = rn.choice(list(self.support_vectors.keys()))
-        sv = self.data[sv_key, :]
+        # sv_key = rn.choice(list(self.support_vectors.keys()))
+        # sv = self.data[sv_key, :]
 
         xgrid = np.linspace(-5, 5)
         ygrid = np.linspace(-5, 5)
@@ -172,41 +184,57 @@ class Classifier(object):
              for y in ygrid]
             for x in xgrid])
 
-        CX = plt.contour(xgrid, ygrid, grid, (-1.0, 0.0, 1.0),
+        CX = plotter.contour(xgrid, ygrid, grid, (-1.0, 0.0, 1.0),
                          colors=('red', 'black', 'blue'),
                          linewidths=(1, 3, 1))
 
-        plt.clabel(CX, fontsize=9, inline=1)
-        plt.show()
+        plotter.clabel(CX, fontsize=9, inline=1)
 
 
 (l, d) = gen_clusters([{'label': -1,
                         'group_spread': 2,
                         'center': np.array([3, 3]),
-                        'number_of_points': 30},
+                        'number_of_points': 10},
                        {'label': 1,
-                        'group_spread': 1,
-                        'center': np.array([0, 0]),
-                        'number_of_points': 20},
-                       {'label': -1,
                         'group_spread': 2,
-                        'center': np.array([0, -4]),
-                        'number_of_points': 20}],
+                        'center': np.array([3, -3]),
+                        'number_of_points': 20},
+                        {'label': -1,
+                        'group_spread': 2,
+                        'center': np.array([-3, -3]),
+                        'number_of_points': 20},
+                        {'label': 1,
+                        'group_spread': 2,
+                        'center': np.array([-3, 3]),
+                        'number_of_points': 30}
+                       ],
                       2)
 
 
-classifier_linear = Classifier(d, l)
-classifier_poly = Classifier(d, l, kernel_function=poly_kernel(2))
-classifier_radial = Classifier(d, l,
-                               kernel_function=radial_basis_kernel(40))
+d[20] = np.array([1.5, 1.5])
+l[:, 20] = -1
 
+classifier_linear = Classifier(d, l, slack=1)
+classifier_poly = Classifier(d, l,
+                             kernel_function=poly_kernel(2), slack=0.0202)
+classifier_radial = Classifier(d, l,
+                               kernel_function=radial_basis_kernel(1))
+
+
+# f, axarr = plt.subplots(3, sharex=True, sharey=True)
+# f.suptitle('Sharing both axes')
+
+ax = Axes3D(plt.gcf())
 
 # classifier_linear.learn()
-# classifier_linear.print()
+# classifier_linear.print(axarr[0])
 
-classifier_poly.learn()
-classifier_poly.print()
+# classifier_poly.learn()
+# classifier_poly.print(axarr[1])
 
-# classifier_radial.learn()
-# classifier_radial.print()
+classifier_radial.learn()
+classifier_radial.print(ax)
+
+# f.subplots_adjust(hspace=0.2)
+plt.show()
 
