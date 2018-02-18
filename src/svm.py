@@ -194,19 +194,19 @@ class Classifier(object):
 (l, d) = gen_clusters([{'label': -1,
                         'group_spread': 2,
                         'center': np.array([3, 3]),
-                        'number_of_points': 10},
+                        'number_of_points': 20},
                        {'label': 1,
                         'group_spread': 2,
                         'center': np.array([3, -3]),
-                        'number_of_points': 20},
+                        'number_of_points': 40},
                         {'label': -1,
                         'group_spread': 2,
                         'center': np.array([-3, -3]),
-                        'number_of_points': 20},
+                        'number_of_points': 40},
                         {'label': 1,
                         'group_spread': 2,
                         'center': np.array([-3, 3]),
-                        'number_of_points': 30}
+                        'number_of_points': 60}
                        ],
                       2)
 
@@ -229,11 +229,11 @@ ax = Axes3D(plt.gcf())
 # classifier_linear.learn()
 # classifier_linear.print(axarr[0])
 
-# classifier_poly.learn()
-# classifier_poly.print(axarr[1])
+classifier_poly.learn()
+classifier_poly.print(ax)
 
-classifier_radial.learn()
-classifier_radial.print(ax)
+# classifier_radial.learn()
+# classifier_radial.print(ax)
 
 # f.subplots_adjust(hspace=0.2)
 plt.show()
