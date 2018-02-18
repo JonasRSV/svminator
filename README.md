@@ -1,6 +1,6 @@
 # A implementation of a Support Vector Machine
 
-![alt text](https://imgur.com/a/KN8I6 "Logo Title Text 1")
+[Imgur](https://i.imgur.com/gtMJpD4.png)
 
 
 Example classifictation of two groups in different cluster, separation done 
